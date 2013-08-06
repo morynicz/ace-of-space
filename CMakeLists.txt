@@ -3,6 +3,8 @@ project(AceOfSpace CXX C)
 
 find_package(OpenCV REQUIRED)
 find_package(PCL 1.3 REQUIRED)
+find_package(Boost REQUIRED program_options)
+find_package(Threads)
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -12,5 +14,19 @@ add_definitions(${PCL_DEFINITIONS})
 
 include_directories(inc)
 
+#add_library(catching src/Catcher.cpp)
+
 add_executable(test src/main.cpp src/ConvenienceFunctions.cpp)
-target_link_libraries(test opencv_core opencv_highgui opencv_features2d opencv_calib3d opencv_nonfree opencv_imgproc)
+target_link_libraries(test opencv_core opencv_highgui opencv_features2d 
+  opencv_calib3d opencv_nonfree opencv_imgproc)
+add_executable(prepareCalib src/stereoCalibPrep.cpp 
+  src/ConvenienceFunctions.cpp src/Catcher.cpp)
+target_link_libraries(prepareCalib opencv_core opencv_highgui 
+  boost_program_options ${CMAKE_THREAD_LIBS_INIT})
+
+if(UNIX)
+  set_target_properties(prepareCalib PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS} -std=c++11)
+  set(CXX_FLAGS ${CXX_FLAGS} -Wall)
+  set_target_properties(test PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS}-std=c++11)
+#  set_target_properties(catching PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS} -std=c++11)
+endif(UNIX)

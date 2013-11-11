@@ -10,7 +10,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "Catcher.hpp"
+#include <string>
+#include <iostream>
 
 #include "ConvenienceFunctions.hpp"
 
@@ -56,15 +57,26 @@ int main(int argc, char **argv) {
     std::string target;
     int leftDevice;
     int rightDevice;
-    Catcher leftCapture;
-    Catcher rightCapture;
+
+    cv::VideoCapture leftCapture;
+    cv::VideoCapture rightCapture;
+
     parseCommandline(argc, argv, target, leftDevice, rightDevice);
 
     leftCapture.open(leftDevice);
+    if (!leftCapture.isOpened()) {
+        cv::Exception ex(0, "Didn't open device left", __func__, __FILE__,
+        __LINE__);
+        throw ex;
+    }
     rightCapture.open(rightDevice);
-
-    cv::Size imageSize(leftCapture.get(cv::CAP_PROP_FRAME_WIDTH),
-            leftCapture.get(cv::CAP_PROP_FRAME_HEIGHT));
+    if (!rightCapture.isOpened()) {
+        cv::Exception ex(0, "Didn't open device rightCapture", __func__, __FILE__,
+        __LINE__);
+        throw ex;
+    }
+    cv::Size imageSize(leftCapture.get(CV_CAP_PROP_FRAME_WIDTH),
+            leftCapture.get(CV_CAP_PROP_FRAME_HEIGHT));
 
     cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
 
@@ -89,21 +101,18 @@ int main(int argc, char **argv) {
     int counter = 0;
     int delay = 300;
     int dc = 0;
+    cv::waitKey(1000);
     do {
-        cv::Mat tL;
-        cv::Mat tR;
+        std::vector<cv::Mat> tmp(2);
         cv::Mat l = display(leftRoi);
         cv::Mat r = display(rightRoi);
-//        leftCapture.grab();
-//        rightCapture.grab();
-//        leftCapture.retrieve(tL);
-//        rightCapture.retrieve(tR);
-        leftCapture>>tL;
-        rightCapture>>tR;
-        tL.copyTo(l);
-        tR.copyTo(r);
-
-        imshow("main", display);
+        leftCapture.grab();
+        rightCapture.grab();
+        leftCapture.retrieve(tmp[0]);
+        rightCapture.retrieve(tmp[1]);
+        tmp[0].copyTo(l);
+        tmp[1].copyTo(r);
+        cv::imshow("main", display);
         c = cv::waitKey(1);
         if (dc >= delay) {
             std::string leftPath = target + "/left"
@@ -114,7 +123,6 @@ int main(int argc, char **argv) {
             cv::imwrite(rightPath, r);
             fs << leftPath;
             fs << rightPath;
-            std::cerr << ++counter << std::endl;
             dc = 0;
         }
         ++dc;

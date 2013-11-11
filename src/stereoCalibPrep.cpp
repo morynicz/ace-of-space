@@ -17,22 +17,21 @@
 
 const int USER_TRIGGERED_EXIT = 0;
 
-void parseCommandline(const int &argc, char **argv,
-        std::string &target, int &leftCapture, int &rightCapture) {
+void parseCommandline(const int &argc, char **argv, std::string &target,
+        int &leftCapture, int &rightCapture) {
 
     boost::program_options::options_description desc;
 
     desc.add_options()("help,h", "this help message")("left,l",
             boost::program_options::value<int>(),
-            "number of /dev/videoX device used as left camera")(
-            "right,r", boost::program_options::value<int>(),
-            "number of /dev/videoX device used as left camera")(
-            "output,o", boost::program_options::value<std::string>(),
+            "number of /dev/videoX device used as left camera")("right,r",
+            boost::program_options::value<int>(),
+            "number of /dev/videoX device used as left camera")("output,o",
+            boost::program_options::value<std::string>(),
             "output file for list of pictures");
     boost::program_options::variables_map vm;
     boost::program_options::store(
-            boost::program_options::parse_command_line(argc, argv,
-                    desc), vm);
+            boost::program_options::parse_command_line(argc, argv, desc), vm);
     boost::program_options::notify(vm);
 
     if (vm.count("help")) {
@@ -65,14 +64,14 @@ int main(int argc, char **argv) {
 
     leftCapture.open(leftDevice);
     if (!leftCapture.isOpened()) {
-        cv::Exception ex(0, "Didn't open device left", __func__, __FILE__,
-        __LINE__);
+        cv::Exception ex(0, "Didn't open left device", __func__, __FILE__,
+                __LINE__);
         throw ex;
     }
     rightCapture.open(rightDevice);
     if (!rightCapture.isOpened()) {
-        cv::Exception ex(0, "Didn't open device rightCapture", __func__, __FILE__,
-        __LINE__);
+        cv::Exception ex(0, "Didn't open right device", __func__, __FILE__,
+                __LINE__);
         throw ex;
     }
     cv::Size imageSize(leftCapture.get(CV_CAP_PROP_FRAME_WIDTH),
@@ -90,11 +89,10 @@ int main(int argc, char **argv) {
     std::cerr << rightRoi << std::endl;
     cv::namedWindow("main", cv::WINDOW_NORMAL);
 
-    cv::FileStorage fs(target + "/imageList.xml",
-            cv::FileStorage::WRITE);
+    cv::FileStorage fs(target + "/imageList.xml", cv::FileStorage::WRITE);
     if (!fs.isOpened()) {
-        cv::Exception ex(-1, "Could not open FileStorage", __func__,
-                __FILE__, __LINE__);
+        cv::Exception ex(-1, "Could not open FileStorage", __func__, __FILE__,
+                __LINE__);
     }
 
     fs << "images" << "[";
@@ -115,10 +113,10 @@ int main(int argc, char **argv) {
         cv::imshow("main", display);
         c = cv::waitKey(1);
         if (dc >= delay) {
-            std::string leftPath = target + "/left"
-                    + std::to_string(counter) + ".png";
-            std::string rightPath = target + "/right"
-                    + std::to_string(counter) + ".png";
+            std::string leftPath = target + "/left" + std::to_string(counter)
+                    + ".png";
+            std::string rightPath = target + "/right" + std::to_string(counter)
+                    + ".png";
             cv::imwrite(leftPath, l);
             cv::imwrite(rightPath, r);
             fs << leftPath;

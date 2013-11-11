@@ -2,44 +2,30 @@
 ///\brief File containing implementation of class Catcher
 ///\author Michał Orynicz
 #include "Catcher.hpp"
-//using namespace std;
+#include "ConvenienceFunctions.hpp"
+/**
+ * Constructor for video streams originating from a device
+ * \param nrs - numbers of the devices
+ * \param mat - pointer to vector of cv::Mat objects which
+ * will contain the most recent frame
+ * \param mtx - pointer to mutex
+ */
+Catcher::Camera::Camera(const std::vector<int> &nr,
+        std::vector<cv::Mat> *mat, std::mutex *mtx, std::mutex *fMtx,
+        bool *finish) :
+        _fr(mat), _mut(mtx), _fin(fMtx), _finish(finish) {
 
-/// Constructor for video streams originating from a device
-/// \param nr - number of the device
-/// \param mat - pointer to cv::Mat object which will contain the most
-/// recent frame
-/// \param mtx - pointer to mutex 
-Catcher::Camera::Camera(const int &nr, cv::Mat *mat, std::mutex *mtx,
-        std::mutex *fMtx, bool *finish) :
-        _frameRate(0), _cam(nr), _fr(mat), _mut(mtx), _fin(fMtx), _finish(
-                finish) {
-
-    if (!_cam.isOpened()) {
-        cv::Exception err(CATCH_CANNOT_OPEN_DEVICE,
-                "file cannot be opened", __func__, __FILE__,
-                __LINE__);
-        throw err;
-    }
-}
-
-/// Constructor for video streams originating from a device
-/// \param name - name of video file
-/// \param mat - pointer to cv::Mat object which will contain the most
-/// recent frame
-/// \param mtx - pointer to mutex 
-Catcher::Camera::Camera(const std::string &name, cv::Mat *mat,
-        std::mutex *mtx, std::mutex *fMtx, bool *finish) :
-        _cam(name), _fr(mat), _mut(mtx), _fin(fMtx), _finish(finish) {
-
-    if (!_cam.isOpened()) {
-        cv::Exception err(CATCH_CANNOT_OPEN_FILE,
-                "file cannot be opened", __func__, __FILE__,
-                __LINE__);
-        throw err;
-    }
-    _frameRate = _cam.get(cv::CAP_PROP_FPS);
-    if (_frameRate <= 0) {
-        _frameRate = 30;
+    _cam.resize(nr.size());
+    _fr->resize(nr.size());
+    for (unsigned i = 0; i < _cam.size(); ++i) {
+        std::cerr<<"nri"<<nr[i]<<std::endl;
+        _cam[i].open(nr[i]);
+        if (!_cam[i].isOpened()) {
+            cv::Exception err(CATCH_CANNOT_OPEN_DEVICE,
+                    "file cannot be opened", __func__, __FILE__,
+                    __LINE__);
+            throw err;
+        }
     }
 }
 
@@ -51,26 +37,20 @@ Catcher::Camera::~Camera() {
 /// buffer of stream is empty
 void Catcher::Camera::operator()() {
     bool run = true;
-    if (_frameRate > 0) {
-        while (run) {
-            _mut->lock();
-            _cam >> (*_fr);
-            _mut->unlock();
-            cv::waitKey(10);
-            _fin->lock();
-            run = !*_finish;
-            _fin->unlock();
+    cv::waitKey(1000);
+    while (run) {
+        _mut->lock();
+        for (register unsigned i = 0; i < _cam.size(); ++i) {
+            _cam[i].grab();
         }
-    } else {
-        while (run) {
-            _mut->lock();
-            _cam >> (*_fr);
-            _mut->unlock();
-            cv::waitKey(10);
-            _fin->lock();
-            run = !*_finish;
-            _fin->unlock();
+        for (unsigned i = 0; i < _cam.size(); ++i) {
+            _cam[i].retrieve((*_fr)[i]);
         }
+        _mut->unlock();
+        cv::waitKey(10);
+        _fin->lock();
+        run = !*_finish;
+        _fin->unlock();
     }
 }
 /**
@@ -78,99 +58,94 @@ void Catcher::Camera::operator()() {
  * \param propId - property id. To get possible values, see
  * cv::VideoCapture::get documentation
  */
-double Catcher::Camera::get(const int &propId) {
-    return _cam.get(propId);
+double Catcher::Camera::get(const int &propId, const int &channel) {
+    return _cam[channel].get(propId);
 }
 ///Method for setting cv::VideoCapture properties
 ///\param propId - property id. To get possible values, see
 ///cv::VideoCapture::set documentation
 ///\param value - value to which property @propId will be set
-bool Catcher::Camera::set(const int &propId, const double &value) {
-    return _cam.set(propId, value);
+bool Catcher::Camera::set(const int &propId, const double &value,
+        const int &channel) {
+    return _cam[channel].set(propId, value);
+}
+
+/// Method checking if underlying cv::VideoCapture channel is opened
+/// \retval true if capture is opened
+/// \retval false if it is not
+bool Catcher::Camera::isOpened(const int &channel) const {
+    _mut->lock();
+    bool result = _cam[channel].isOpened();
+    _mut->unlock();
+    return result;
 }
 
 /// Method checking if underlying cv::VideoCapture is opened
 /// \retval true if capture is opened
 /// \retval false if it is not
-bool Catcher::Camera::isOpened() {
+bool Catcher::Camera::isOpened() const {
     _mut->lock();
-    bool result = _cam.isOpened();
+    bool result = true;
+    for (unsigned i = 0; i < _cam.size(); ++i) {
+        result = _cam[i].isOpened() && result;
+    }
     _mut->unlock();
     return result;
 }
 
 /// Initializes mut and thr pointers
 Catcher::Catcher() :
-        _mut(nullptr), _thr(nullptr),_fin(nullptr), _finish(false) {
+        _mut(nullptr), _thr(nullptr), _fin(nullptr), _finish(false) {
 
+}
+
+/// Opens video devices
+Catcher::Catcher(const std::vector<int> &nrs) :
+        _mut(new std::mutex), _fin(new std::mutex), _finish(false), _cam(
+                Camera(nrs, &_fr, _mut, _fin, &_finish)), _thr(
+                new std::thread(std::ref(_cam))) {
 }
 
 /// Opens video device
 Catcher::Catcher(const int &nr) :
         _mut(new std::mutex), _fin(new std::mutex), _finish(false), _cam(
-                Camera(nr, &_fr, _mut, _fin, &_finish)), _thr(
+                Camera(std::vector<int>(1, nr), &_fr, _mut, _fin,
+                        &_finish)), _thr(
                 new std::thread(std::ref(_cam))) {
 }
 
-/// Opens video stream
-Catcher::Catcher(const std::string &name) :
-        _mut(new std::mutex), _fin(new std::mutex), _finish(false), _cam(
-                Camera(name, &_fr, _mut, _fin, &_finish)), _thr(
-                new std::thread(std::ref(_cam))) {
+/// Method initializing the object for drawing video stream from devices
+/// with given numbers
+/// \param nrs - numbers of devices from which the video stream will be drawn
+bool Catcher::open(const std::vector<int> &nrs) {
+    if (_thr != nullptr) {
+        _fin->lock();
+        _finish = true;
+        _fin->unlock();
+        _thr->join();
+        delete _thr;
+        _thr = nullptr;
+    }
+    if (_mut != nullptr) {
+        delete _mut;
+    }
+    _mut = new std::mutex;
+    _fin = new std::mutex;
+    _finish = false;
+    _cam = Camera(nrs, &_fr, _mut, _fin, &_finish);
+    if (_cam.isOpened()) {
+        _thr = new std::thread(std::ref(_cam));
+        return true;
+    } else {
+        return false;
+    }
 }
 
-/// Method initializing the object for drawing video stream from a device 
+/// Method initializing the object for drawing video stream from a device
 /// with given number
 /// \param nr - number of device from which the video stream will be drawn
 bool Catcher::open(const int &nr) {
-    if (_thr != nullptr) {
-        _fin->lock();
-        _finish = true;
-        _fin->unlock();
-        _thr->join();
-        delete _thr;
-        _thr = nullptr;
-    }
-    if (_mut != nullptr) {
-        delete _mut;
-    }
-    _mut = new std::mutex;
-    _fin = new std::mutex;
-    _finish = false;
-    _cam = Camera(nr, &_fr, _mut, _fin, &_finish);
-    if (_cam.isOpened()) {
-        _thr = new std::thread(std::ref(_cam));
-        return true;
-    } else {
-        return false;
-    }
-}
-
-/// Method initializing the object for drawing video stream from a video
-/// file
-/// \param name - name of file from which the video stream will be read
-bool Catcher::open(const std::string& name) {
-    if (_thr != nullptr) {
-        _fin->lock();
-        _finish = true;
-        _fin->unlock();
-        _thr->join();
-        delete _thr;
-        _thr = nullptr;
-    }
-    if (_mut != nullptr) {
-        delete _mut;
-    }
-    _mut = new std::mutex;
-    _fin = new std::mutex;
-    _finish = false;
-    _cam = Camera(name, &_fr, _mut, _fin, &_finish);
-    if (_cam.isOpened()) {
-        _thr = new std::thread(std::ref(_cam));
-        return true;
-    } else {
-        return false;
-    }
+    return open(std::vector<int>(1, nr));
 }
 
 /// Destructor, ensures that all threads and dynamic objects will be
@@ -195,9 +170,27 @@ Catcher::~Catcher() {
 /// outside
 /// \param frame - object in which the deep copy of most recent frame will
 /// be placed
-bool Catcher::read(cv::Mat& frame) {
+bool Catcher::read(cv::Mat& frame, const int &channel) {
     _mut->lock();
-    frame = _fr.clone();
+    frame = _fr[channel].clone();
+    _mut->unlock();
+    return !frame.empty(); //need to correct this
+}
+
+/// Method which makes a deep copy of most recent frame, and returns it
+/// outside
+/// \param frame - object in which the deep copy of most recent frame will
+/// be placed
+bool Catcher::read(std::vector<cv::Mat> &frame) {
+    frame.resize(_fr.size());
+    _mut->lock();
+    for (unsigned i = 0; i < _fr.size(); ++i) {
+        if(_fr[i].empty()){
+            cv::Exception ex(0,"Empty matrix",__func__,__FILE__,__LINE__);
+            throw ex;
+        }
+        frame[i] = _fr[i].clone();
+    }
     _mut->unlock();
     return !frame.empty(); //need to correct this
 }
@@ -205,10 +198,10 @@ bool Catcher::read(cv::Mat& frame) {
 ///Method for acquiring cv::VideoCapture properties
 ///\param propId - property id. To get possible values, see
 ///cv::VideoCapture::get documentation
-double Catcher::get(const int &propId) {
+double Catcher::get(const int &propId, const int &channel) {
     double result;
     _mut->lock();
-    result = _cam.get(propId);
+    result = _cam.get(propId, channel);
     _mut->unlock();
     return result;
 }
@@ -216,7 +209,8 @@ double Catcher::get(const int &propId) {
 ///\param propId - property id. To get possible values, see
 ///cv::VideoCapture::set documentation
 ///\param value - value to which property propId will be set
-bool Catcher::set(const int &propId, const double &value) {
+bool Catcher::set(const int &propId, const double &value,
+        const int &channel) {
     bool result;
     _mut->lock();
     result = _cam.set(propId, value);
@@ -225,6 +219,6 @@ bool Catcher::set(const int &propId, const double &value) {
 }
 
 Catcher& Catcher::operator>>(cv::Mat &frame) {
-    read(frame);
+    read(frame,0);
     return *this;
 }

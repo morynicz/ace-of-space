@@ -26,13 +26,13 @@ int main() {
 
     char c = ' ';
 
-    std::cerr << capL.get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
-    std::cerr << capL.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
-    std::cerr << capR.get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
-    std::cerr << capR.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
+    std::cerr << capL.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+    std::cerr << capL.get(CV_CAP_PROP_FRAME_HEIGHT) << std::endl;
+    std::cerr << capR.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+    std::cerr << capR.get(CV_CAP_PROP_FRAME_HEIGHT) << std::endl;
 
-    cv::Size imageSize(capL.get(cv::CAP_PROP_FRAME_WIDTH),
-            capL.get(cv::CAP_PROP_FRAME_HEIGHT));
+    cv::Size imageSize(capL.get(CV_CAP_PROP_FRAME_WIDTH),
+            capL.get(CV_CAP_PROP_FRAME_HEIGHT));
 
     std::cerr << imageSize << std::endl;
 
@@ -41,7 +41,7 @@ int main() {
 
     cv::Rect leftRoi(cv::Point(0, 0), imageSize);
     cv::Rect rightRoi(
-            cv::Point(capL.get(cv::CAP_PROP_FRAME_WIDTH), 0),
+            cv::Point(capL.get(CV_CAP_PROP_FRAME_WIDTH), 0),
             imageSize);
 
     cv::namedWindow("left", cv::WINDOW_NORMAL);

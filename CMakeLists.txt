@@ -27,8 +27,16 @@ target_link_libraries(test opencv_core opencv_highgui opencv_features2d
 add_executable(prepareCalib
 	src/stereoCalibPrep.cpp
 	src/ConvenienceFunctions.cpp
+	src/ImageListIO.cpp
 	src/Catcher.cpp)
 target_link_libraries(prepareCalib opencv_core opencv_highgui
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(editPairList
+	src/editStereoList.cpp
+	src/ConvenienceFunctions.cpp
+	src/ImageListIO.cpp)
+target_link_libraries(editPairList opencv_core opencv_highgui
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 if(UNIX)

@@ -12,8 +12,10 @@
 
 #include <string>
 #include <iostream>
+#include <list>
 
 #include "ConvenienceFunctions.hpp"
+#include "ImageListIO.hpp"
 
 const int USER_TRIGGERED_EXIT = 0;
 
@@ -52,6 +54,33 @@ void parseCommandline(const int &argc, char **argv, std::string &target,
     }
 }
 
+cv::Size normalizeCaptureAndGetSize(cv::VideoCapture &leftCapture,
+        cv::VideoCapture &rightCapture) {
+    cv::Size leftImageSize(leftCapture.get(CV_CAP_PROP_FRAME_WIDTH),
+            leftCapture.get(CV_CAP_PROP_FRAME_HEIGHT));
+
+    cv::Size rightImageSize(rightCapture.get(CV_CAP_PROP_FRAME_WIDTH),
+            rightCapture.get(CV_CAP_PROP_FRAME_HEIGHT));
+
+    cv::Size result = leftImageSize;
+
+    if (leftImageSize.height < rightImageSize.height) {
+        rightCapture.set(CV_CAP_PROP_FRAME_HEIGHT, leftImageSize.height);
+    } else if (leftImageSize.height > rightImageSize.height) {
+        leftCapture.set(CV_CAP_PROP_FRAME_HEIGHT, rightImageSize.height);
+        result.height = rightImageSize.height;
+    }
+
+    if (leftImageSize.width < rightImageSize.width) {
+        rightCapture.set(CV_CAP_PROP_FRAME_WIDTH, leftImageSize.width);
+    } else if (leftImageSize.width > rightImageSize.width) {
+        leftCapture.set(CV_CAP_PROP_FRAME_WIDTH, rightImageSize.width);
+        result.width = rightImageSize.width;
+    }
+
+    return result;
+}
+
 int main(int argc, char **argv) {
     std::string target;
     int leftDevice;
@@ -74,8 +103,7 @@ int main(int argc, char **argv) {
                 __LINE__);
         throw ex;
     }
-    cv::Size imageSize(leftCapture.get(CV_CAP_PROP_FRAME_WIDTH),
-            leftCapture.get(CV_CAP_PROP_FRAME_HEIGHT));
+    cv::Size imageSize = normalizeCaptureAndGetSize(leftCapture, rightCapture);
 
     cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
 
@@ -89,17 +117,11 @@ int main(int argc, char **argv) {
     std::cerr << rightRoi << std::endl;
     cv::namedWindow("main", cv::WINDOW_NORMAL);
 
-    cv::FileStorage fs(target + "/imageList.xml", cv::FileStorage::WRITE);
-    if (!fs.isOpened()) {
-        cv::Exception ex(-1, "Could not open FileStorage", __func__, __FILE__,
-                __LINE__);
-    }
-
-    fs << "images" << "[";
-    int counter = 0;
-    int delay = 300;
+    int delay = 30;
     int dc = 0;
     cv::waitKey(1000);
+
+    std::list<std::pair<cv::Mat, cv::Mat>> imageList;
     do {
         std::vector<cv::Mat> tmp(2);
         cv::Mat l = display(leftRoi);
@@ -113,18 +135,16 @@ int main(int argc, char **argv) {
         cv::imshow("main", display);
         c = cv::waitKey(1);
         if (dc >= delay) {
-            std::string leftPath = target + "/left" + std::to_string(counter)
-                    + ".png";
-            std::string rightPath = target + "/right" + std::to_string(counter)
-                    + ".png";
-            cv::imwrite(leftPath, l);
-            cv::imwrite(rightPath, r);
-            fs << leftPath;
-            fs << rightPath;
+            std::pair<cv::Mat, cv::Mat> pair;
+            pair.first = tmp[0].clone();
+            pair.second = tmp[1].clone();
+
+            imageList.push_back(pair);
             dc = 0;
         }
+        std::cerr << dc << std::endl;
         ++dc;
     } while ('q' != c);
-    fs << "]";
-    fs.release();
+
+    saveImageList(target, imageSize, imageList);
 }

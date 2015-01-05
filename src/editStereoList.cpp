@@ -80,8 +80,9 @@ int main(int argc, char **argv) {
         ((std::pair<cv::Mat, cv::Mat>) *bIt).second.copyTo(right);
         cv::imshow("main", display);
         c = cv::waitKey(0);
-        if('d' == c) {
+        if ('d' == c) {
             bIt = imageList.erase(bIt);
+            continue;
         }
         ++bIt;
         std::cerr << cnt++ << std::endl;

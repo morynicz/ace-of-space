@@ -36,7 +36,7 @@ add_executable(editPairList
 	src/editStereoList.cpp
 	src/ConvenienceFunctions.cpp
 	src/StorageFunctions.cpp)
-target_link_libraries(editPairList opencv_core opencv_highgui
+target_link_libraries(editPairList opencv_core opencv_highgui opencv_calib3d
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 if(UNIX)

@@ -10,6 +10,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 #include <iostream>
 #include <list>
@@ -76,8 +77,18 @@ int main(int argc, char **argv) {
     do {
         cv::Mat left = display(leftRoi);
         cv::Mat right = display(rightRoi);
+        std::vector<cv::Point2f> leftCorners, rightCorners;
         ((std::pair<cv::Mat, cv::Mat>) *bIt).first.copyTo(left);
         ((std::pair<cv::Mat, cv::Mat>) *bIt).second.copyTo(right);
+
+        bool leftFound = cv::findChessboardCorners(left, chessboardSize,
+                leftCorners);
+        cv::drawChessboardCorners(left, chessboardSize, leftCorners, leftFound);
+
+        bool rightFound = cv::findChessboardCorners(right, chessboardSize,
+                rightCorners);
+        cv::drawChessboardCorners(right, chessboardSize, rightCorners,
+                rightFound);
         cv::imshow("main", display);
         c = cv::waitKey(0);
         if ('d' == c) {

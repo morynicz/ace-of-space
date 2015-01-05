@@ -39,6 +39,13 @@ add_executable(editPairList
 target_link_libraries(editPairList opencv_core opencv_highgui opencv_calib3d
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
+add_executable(calibrateCams
+	src/StereoCalib.cpp
+	src/ConvenienceFunctions.cpp
+	src/StorageFunctions.cpp)
+target_link_libraries(calibrateCams opencv_core opencv_highgui opencv_calib3d opencv_imgproc
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
 if(UNIX)
   set_target_properties(prepareCalib PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS} -std=c++11)
   set(CXX_FLAGS ${CXX_FLAGS} -Wall)

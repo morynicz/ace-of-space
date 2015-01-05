@@ -20,22 +20,22 @@ include_directories(inc)
 
 #add_library(catching src/Catcher.cpp)
 
-add_executable(test src/main.cpp src/ConvenienceFunctions.cpp)
+add_executable(test src/main.cpp src/ConvenienceFunctions.cpp src/StorageFunctions.cpp)
 target_link_libraries(test opencv_core opencv_highgui opencv_features2d
   opencv_calib3d opencv_nonfree opencv_imgproc ${Boost_LIBRARIES})
 
 add_executable(prepareCalib
 	src/stereoCalibPrep.cpp
 	src/ConvenienceFunctions.cpp
-	src/ImageListIO.cpp
+	src/StorageFunctions.cpp
 	src/Catcher.cpp)
-target_link_libraries(prepareCalib opencv_core opencv_highgui
+target_link_libraries(prepareCalib opencv_core opencv_highgui opencv_imgproc
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(editPairList
 	src/editStereoList.cpp
 	src/ConvenienceFunctions.cpp
-	src/ImageListIO.cpp)
+	src/StorageFunctions.cpp)
 target_link_libraries(editPairList opencv_core opencv_highgui
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 

@@ -15,7 +15,7 @@
 #include <list>
 
 #include "ConvenienceFunctions.hpp"
-#include "ImageListIO.hpp"
+#include "StorageFunctions.hpp"
 
 const int USER_TRIGGERED_EXIT = 0;
 
@@ -53,12 +53,13 @@ int main(int argc, char **argv) {
 
     parseCommandline(argc, argv, input, output);
 
-    cv::Size imageSize;
+    cv::Size imageSize, chessboardSize;
+    double sideLength;
     std::list<std::pair<cv::Mat, cv::Mat>> imageList;
 
-    loadImageList(input, imageSize, imageList);
+    loadImageList(input, imageSize, chessboardSize, sideLength, imageList);
 
-    cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
+    cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC1);
 
     cv::Rect leftRoi(cv::Point(imageSize.width, 0), imageSize);
     cv::Rect rightRoi(cv::Point(0, 0), imageSize);
@@ -86,6 +87,6 @@ int main(int argc, char **argv) {
         std::cerr << cnt++ << std::endl;
     } while (imageList.end() != bIt && 'q' != c);
 
-    saveImageList(output, imageSize, imageList);
+    saveImageList(output, imageSize, chessboardSize, sideLength, imageList);
 }
 

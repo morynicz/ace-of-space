@@ -15,12 +15,13 @@
 #include <list>
 
 #include "ConvenienceFunctions.hpp"
-#include "ImageListIO.hpp"
+#include "StorageFunctions.hpp"
 
 const int USER_TRIGGERED_EXIT = 0;
 
 void parseCommandline(const int &argc, char **argv, std::string &target,
-        int &leftCapture, int &rightCapture) {
+        int &leftCapture, int &rightCapture, cv::Size &chessboardSize,
+        double & length) {
 
     boost::program_options::options_description desc;
 
@@ -30,7 +31,14 @@ void parseCommandline(const int &argc, char **argv, std::string &target,
             boost::program_options::value<int>(),
             "number of /dev/videoX device used as left camera")("output,o",
             boost::program_options::value<std::string>(),
-            "output file for list of pictures");
+            "output file for list of pictures")("length,L",
+            boost::program_options::value<double>(),
+            "Legth of side of a single chessboard field in chosen units."
+                    "These units will be used later as measure unit for all calculations")(
+            "width,W", boost::program_options::value<int>(),
+            "Width of calibration chessboard in number of inner corners")(
+            "height,H", boost::program_options::value<int>(),
+            "Height of calibration chessboard in number of inner corners");
     boost::program_options::variables_map vm;
     boost::program_options::store(
             boost::program_options::parse_command_line(argc, argv, desc), vm);
@@ -40,17 +48,24 @@ void parseCommandline(const int &argc, char **argv, std::string &target,
         std::cout << desc << std::endl;
         throw USER_TRIGGERED_EXIT;
     }
-
+//TODO Make some assertion for missing arguments
     if (vm.count("left")) {
         leftCapture = vm["left"].as<int>();
     }
-
     if (vm.count("right")) {
         rightCapture = vm["right"].as<int>();
     }
-
     if (vm.count("output")) {
         target = vm["output"].as<std::string>();
+    }
+    if (vm.count("width")) {
+        chessboardSize.width = vm["width"].as<int>();
+    }
+    if (vm.count("height")) {
+        chessboardSize.height = vm["height"].as<int>();
+    }
+    if (vm.count("length")) {
+        length = vm["length"].as<double>();
     }
 }
 
@@ -85,22 +100,24 @@ int main(int argc, char **argv) {
     std::string target;
     int leftDevice;
     int rightDevice;
+    cv::Size chessboardSize;
+    double sideLenght;
 
     cv::VideoCapture leftCapture;
     cv::VideoCapture rightCapture;
 
-    parseCommandline(argc, argv, target, leftDevice, rightDevice);
+    parseCommandline(argc, argv, target, leftDevice, rightDevice,chessboardSize,sideLenght);
 
     leftCapture.open(leftDevice);
     if (!leftCapture.isOpened()) {
         cv::Exception ex(0, "Didn't open left device", __func__, __FILE__,
-                __LINE__);
+        __LINE__);
         throw ex;
     }
     rightCapture.open(rightDevice);
     if (!rightCapture.isOpened()) {
         cv::Exception ex(0, "Didn't open right device", __func__, __FILE__,
-                __LINE__);
+        __LINE__);
         throw ex;
     }
     cv::Size imageSize = normalizeCaptureAndGetSize(leftCapture, rightCapture);
@@ -146,5 +163,5 @@ int main(int argc, char **argv) {
         ++dc;
     } while ('q' != c);
 
-    saveImageList(target, imageSize, imageList);
+    saveImageList(target, imageSize, chessboardSize, sideLenght, imageList);
 }

@@ -10,19 +10,24 @@ find_package(PCL 1.3 REQUIRED)
 find_package(Boost REQUIRED program_options system)
 find_package(Threads)
 
+message(${Boost_LIBRARIES})
+
+
 set(CMAKE_BUILD_TYPE Debug)
+
+include_directories(inc)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-include_directories(inc)
+
 
 #add_library(catching src/Catcher.cpp)
 
 add_executable(test src/main.cpp src/ConvenienceFunctions.cpp src/StorageFunctions.cpp)
 target_link_libraries(test opencv_core opencv_highgui opencv_features2d
-  opencv_calib3d opencv_nonfree opencv_imgproc ${Boost_LIBRARIES})
+  opencv_calib3d opencv_nonfree opencv_imgproc ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(prepareCalib
 	src/stereoCalibPrep.cpp

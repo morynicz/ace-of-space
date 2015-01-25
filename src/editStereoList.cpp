@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     loadImageList(input, imageSize, chessboardSize, sideLength, imageList);
 
-    cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC1);
+    cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
 
     cv::Rect leftRoi(cv::Point(imageSize.width, 0), imageSize);
     cv::Rect rightRoi(cv::Point(0, 0), imageSize);
@@ -77,16 +77,19 @@ int main(int argc, char **argv) {
     do {
         cv::Mat left = display(leftRoi);
         cv::Mat right = display(rightRoi);
+        cv::Mat gLeft,gRight;
         std::vector<cv::Point2f> leftCorners, rightCorners;
-        ((std::pair<cv::Mat, cv::Mat>) *bIt).first.copyTo(left);
-        ((std::pair<cv::Mat, cv::Mat>) *bIt).second.copyTo(right);
+        ((std::pair<cv::Mat, cv::Mat>) *bIt).first.copyTo(gLeft);
+        ((std::pair<cv::Mat, cv::Mat>) *bIt).second.copyTo(gRight);
 
-        bool leftFound = cv::findChessboardCorners(left, chessboardSize,
+        bool leftFound = cv::findChessboardCorners(gLeft, chessboardSize,
                 leftCorners);
+        cv::cvtColor(gLeft,left,CV_GRAY2BGR);
         cv::drawChessboardCorners(left, chessboardSize, leftCorners, leftFound);
 
-        bool rightFound = cv::findChessboardCorners(right, chessboardSize,
+        bool rightFound = cv::findChessboardCorners(gRight, chessboardSize,
                 rightCorners);
+        cv::cvtColor(gRight,right,CV_GRAY2BGR);
         cv::drawChessboardCorners(right, chessboardSize, rightCorners,
                 rightFound);
         cv::imshow("main", display);

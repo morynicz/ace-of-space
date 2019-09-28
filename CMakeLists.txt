@@ -10,9 +10,6 @@ find_package(PCL 1.3 REQUIRED)
 find_package(Boost REQUIRED program_options system)
 find_package(Threads)
 
-message(${Boost_LIBRARIES})
-
-
 set(CMAKE_BUILD_TYPE Debug)
 
 include_directories(inc)
@@ -25,9 +22,9 @@ add_definitions(${PCL_DEFINITIONS})
 
 #add_library(catching src/Catcher.cpp)
 
-add_executable(test src/main.cpp src/ConvenienceFunctions.cpp src/StorageFunctions.cpp)
-target_link_libraries(test opencv_core opencv_highgui opencv_features2d
-  opencv_calib3d opencv_nonfree opencv_imgproc ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(tests src/main.cpp src/ConvenienceFunctions.cpp src/StorageFunctions.cpp)
+target_link_libraries(tests opencv_core opencv_highgui opencv_features2d
+  opencv_calib3d opencv_stereo opencv_imgproc opencv_xfeatures2d ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(prepareCalib
 	src/stereoCalibPrep.cpp
@@ -54,6 +51,6 @@ target_link_libraries(calibrateCams opencv_core opencv_highgui opencv_calib3d op
 if(UNIX)
   set_target_properties(prepareCalib PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS} -std=c++11)
   set(CXX_FLAGS ${CXX_FLAGS} -Wall)
-  set_target_properties(test PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS}-std=c++11)
+  set_target_properties(tests PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS}-std=c++11)
 #  set_target_properties(catching PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS} -std=c++11)
 endif(UNIX)

@@ -3,13 +3,10 @@
  * \date 5.04.2013
  * \author Michał Orynicz
  */
+#pragma once
 
-#ifndef CONVENIENCEFUNCTIONS_HPP_
-#define CONVENIENCEFUNCTIONS_HPP_
-
-#include "opencv2/core/core.hpp"
+#include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-//#include "PreparationFunctions.hpp"
 
 /// Method compares two cv::Point3f objects in x axis.
 /**
@@ -36,7 +33,7 @@ bool verticalPoint3Compare(cv::Point3f p1, cv::Point3f p2);
  * @param arg - matrix to be printed
  * @param printValues - pass true to pint matrix values
  */
-void printMatrix(const cv::Mat &arg, bool printValues = false);
+void printMatrix(const cv::Mat& arg, bool printValues = false);
 
 /// Compute mean and variance of a vector
 
@@ -48,18 +45,20 @@ void printMatrix(const cv::Mat &arg, bool printValues = false);
  * @param variance - calculated variance
  */
 template<class T>
-void meanAndVariance(const std::vector<T> &input, T &mean,
-        T &variance) {
-    T sum = 0;
-    for (unsigned int i = 0; i < input.size(); ++i) {
-        sum += input[i];
-    }
-    mean = sum / input.size();
-    sum = 0;
-    for (unsigned int i = 0; i < input.size(); ++i) {
-        sum += (mean - input[i]) * (mean - input[i]);
-    }
-    variance = sum / input.size();
+void meanAndVariance(const std::vector<T>& input, T& mean, T& variance)
+{
+  T sum = 0;
+  for (unsigned int i = 0; i < input.size(); ++i)
+  {
+    sum += input[i];
+  }
+  mean = sum / input.size();
+  sum = 0;
+  for (unsigned int i = 0; i < input.size(); ++i)
+  {
+    sum += (mean - input[i]) * (mean - input[i]);
+  }
+  variance = sum / input.size();
 }
 
 /// Calculate median of a vector
@@ -70,17 +69,20 @@ void meanAndVariance(const std::vector<T> &input, T &mean,
  * @return Median value from values provided in input.
  */
 template<class T>
-T median(std::vector<T> input) {
-    T result = 0;
-    std::nth_element(input.begin(), input.begin() + input.size() / 2,
-            input.end());
-    if (input.size() % 2) {
-        result = (input[input.size() / 2 - 1]
-                + input[input.size() / 2]) / 2;
-    } else {
-        result = input[input.size() / 2 - 1];
-    }
-    return result;
+T median(std::vector<T> input)
+{
+  T result = 0;
+  std::nth_element(
+    input.begin(), input.begin() + input.size() / 2, input.end());
+  if (input.size() % 2)
+  {
+    result = (input[input.size() / 2 - 1] + input[input.size() / 2]) / 2;
+  }
+  else
+  {
+    result = input[input.size() / 2 - 1];
+  }
+  return result;
 }
 
 /// Calculate mean and variance in each axis for vector of points
@@ -94,8 +96,9 @@ T median(std::vector<T> input) {
  * @param mean - point with median values from input
  * @param varinace - point with variance values from input.
  */
-void pointMeanAndVariance(const std::vector<cv::Point3d> &input,
-        cv::Point3d &mean, cv::Point3d &varinace);
+void pointMeanAndVariance(const std::vector<cv::Point3d>& input,
+                          cv::Point3d& mean,
+                          cv::Point3d& varinace);
 
 /// Calculate median in each axis from vector of 3d points
 
@@ -106,7 +109,7 @@ void pointMeanAndVariance(const std::vector<cv::Point3d> &input,
  * @return 3d point constining medians from values from input
  * in each dimension.
  */
-cv::Point3d pointMedian(const std::vector<cv::Point3d> &input);
+cv::Point3d pointMedian(const std::vector<cv::Point3d>& input);
 
 /// Function calculating some statistics for cv::solvePnP methods
 
@@ -147,4 +150,3 @@ void checkPnPMethodStats(cv::VideoCapture &capture,
         cv::Point3d & mean, cv::Point3d & variance,
         cv::Point3d & median, cv::Point3d &stdDev);
 */
-#endif /* CONVENIENCEFUNCTIONS_HPP_ */

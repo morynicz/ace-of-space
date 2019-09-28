@@ -7,10 +7,10 @@
 
 #include <boost/program_options.hpp>
 
+#include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
 
 #include <iostream>
 #include <list>
@@ -20,88 +20,97 @@
 
 const int USER_TRIGGERED_EXIT = 0;
 
-void parseCommandline(const int &argc, char **argv, std::string &input,
-        std::string &output) {
+void parseCommandline(const int& argc,
+                      char** argv,
+                      std::string& input,
+                      std::string& output)
+{
 
-    boost::program_options::options_description desc;
+  boost::program_options::options_description desc;
 
-    desc.add_options()("help,h", "this help message")("input,i",
-            boost::program_options::value<std::string>(),
-            "input directory containing imageList.xml")("output,o",
-            boost::program_options::value<std::string>(),
-            "output directory to which purged imageList.xml will be written");
-    boost::program_options::variables_map vm;
-    boost::program_options::store(
-            boost::program_options::parse_command_line(argc, argv, desc), vm);
-    boost::program_options::notify(vm);
+  desc.add_options()("help,h", "this help message")(
+    "input,i",
+    boost::program_options::value<std::string>(),
+    "input directory containing imageList.xml")(
+    "output,o",
+    boost::program_options::value<std::string>(),
+    "output directory to which purged imageList.xml will be written");
+  boost::program_options::variables_map vm;
+  boost::program_options::store(
+    boost::program_options::parse_command_line(argc, argv, desc), vm);
+  boost::program_options::notify(vm);
 
-    if (vm.count("help")) {
-        std::cout << desc << std::endl;
-        throw USER_TRIGGERED_EXIT;
-    }
+  if (vm.count("help"))
+  {
+    std::cout << desc << std::endl;
+    throw USER_TRIGGERED_EXIT;
+  }
 
-    if (vm.count("output")) {
-        output = vm["output"].as<std::string>();
-    }
+  if (vm.count("output"))
+  {
+    output = vm["output"].as<std::string>();
+  }
 
-    if (vm.count("input")) {
-        input = vm["input"].as<std::string>();
-    }
+  if (vm.count("input"))
+  {
+    input = vm["input"].as<std::string>();
+  }
 }
 
-int main(int argc, char **argv) {
-    std::string input, output;
+int main(int argc, char** argv)
+{
+  std::string input, output;
 
-    parseCommandline(argc, argv, input, output);
+  parseCommandline(argc, argv, input, output);
 
-    cv::Size imageSize, chessboardSize;
-    double sideLength;
-    std::list<std::pair<cv::Mat, cv::Mat>> imageList;
+  cv::Size imageSize, chessboardSize;
+  double sideLength;
+  std::list<std::pair<cv::Mat, cv::Mat>> imageList;
 
-    loadImageList(input, imageSize, chessboardSize, sideLength, imageList);
+  loadImageList(input, imageSize, chessboardSize, sideLength, imageList);
 
-    cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
+  cv::Mat display(imageSize.height, imageSize.width * 2, CV_8UC3);
 
-    cv::Rect leftRoi(cv::Point(imageSize.width, 0), imageSize);
-    cv::Rect rightRoi(cv::Point(0, 0), imageSize);
-    std::cerr << imageSize << std::endl;
-    std::cerr << display.size() << std::endl;
-    std::cerr << leftRoi << std::endl;
-    std::cerr << rightRoi << std::endl;
-    cv::namedWindow("main", cv::WINDOW_NORMAL);
+  cv::Rect leftRoi(cv::Point(imageSize.width, 0), imageSize);
+  cv::Rect rightRoi(cv::Point(0, 0), imageSize);
+  std::cerr << imageSize << std::endl;
+  std::cerr << display.size() << std::endl;
+  std::cerr << leftRoi << std::endl;
+  std::cerr << rightRoi << std::endl;
+  cv::namedWindow("main", cv::WINDOW_NORMAL);
 
-    char c = ' ';
+  char c = ' ';
 
-    auto bIt = imageList.begin();
-    int cnt = 0;
-    do {
-        cv::Mat left = display(leftRoi);
-        cv::Mat right = display(rightRoi);
-        cv::Mat gLeft,gRight;
-        std::vector<cv::Point2f> leftCorners, rightCorners;
-        ((std::pair<cv::Mat, cv::Mat>) *bIt).first.copyTo(gLeft);
-        ((std::pair<cv::Mat, cv::Mat>) *bIt).second.copyTo(gRight);
+  auto bIt = imageList.begin();
+  int cnt = 0;
+  do
+  {
+    cv::Mat left = display(leftRoi);
+    cv::Mat right = display(rightRoi);
+    cv::Mat gLeft, gRight;
+    std::vector<cv::Point2f> leftCorners, rightCorners;
+    ((std::pair<cv::Mat, cv::Mat>)*bIt).first.copyTo(gLeft);
+    ((std::pair<cv::Mat, cv::Mat>)*bIt).second.copyTo(gRight);
 
-        bool leftFound = cv::findChessboardCorners(gLeft, chessboardSize,
-                leftCorners);
-        cv::cvtColor(gLeft,left,CV_GRAY2BGR);
-        cv::drawChessboardCorners(left, chessboardSize, leftCorners, leftFound);
+    bool leftFound =
+      cv::findChessboardCorners(gLeft, chessboardSize, leftCorners);
+    cv::cvtColor(gLeft, left, cv::COLOR_BGR2GRAY);
+    cv::drawChessboardCorners(left, chessboardSize, leftCorners, leftFound);
 
-        bool rightFound = cv::findChessboardCorners(gRight, chessboardSize,
-                rightCorners);
-        cv::cvtColor(gRight,right,CV_GRAY2BGR);
-        cv::drawChessboardCorners(right, chessboardSize, rightCorners,
-                rightFound);
-        cv::imshow("main", display);
-        c = cv::waitKey(0);
-        if ('d' == c) {
-            bIt = imageList.erase(bIt);
-            continue;
-        }
-        ++bIt;
-        std::cerr << cnt++ << std::endl;
-    } while (imageList.end() != bIt && 'q' != c);
+    bool rightFound =
+      cv::findChessboardCorners(gRight, chessboardSize, rightCorners);
+    cv::cvtColor(gRight, right, cv::COLOR_BGR2GRAY);
+    cv::drawChessboardCorners(right, chessboardSize, rightCorners, rightFound);
+    cv::imshow("main", display);
+    c = cv::waitKey(0);
+    if ('d' == c)
+    {
+      bIt = imageList.erase(bIt);
+      continue;
+    }
+    ++bIt;
+    std::cerr << cnt++ << std::endl;
+  } while (imageList.end() != bIt && 'q' != c);
 
-    saveImageList(output, imageSize, chessboardSize, sideLength, imageList);
+  saveImageList(output, imageSize, chessboardSize, sideLength, imageList);
 }
-
